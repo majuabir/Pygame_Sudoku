@@ -10,8 +10,12 @@ TILE_SIZE = 30
 TILES = 9
 curTime = 0
 """
-LOADED TEXTURES:
-numbers_keyed.png -> numSprites
+LOADED TEXTURES (as seen in main):
+    textures["squareImage"] = SpriteSheet(os.path.join(TEXTURE_PATH, "square.png"))
+    textures["numSprites"] = SpriteSheet(os.path.join(TEXTURE_PATH, "numbers_keyed.png"))
+    textures["loading"] = SpriteSheet(os.path.join(TEXTURE_PATH, "loading.png"))
+    textures["xmark"] = SpriteSheet(os.path.join(TEXTURE_PATH, "xmark.png"))
+    textures["time"] = SpriteSheet(os.path.join(TEXTURE_PATH, "time.png"))
 """
 textures = {}
 
@@ -36,6 +40,26 @@ class SpriteSheet:
         return sprite
 
 class Game:
+    def __validateEntry(self, num):
+        #row check
+        valid = True
+        x = self.selection[0]
+        y = self.selection[1]
+        if num in self.board[y]:
+            valid = False
+        #col check
+        for j in range(len(self.board)):
+            if num == self.board[j][x]:
+                valid = False
+        #box check, find box to check
+        big_y = (y // 3) * 3 #big y
+        big_x = (x // 3) * 3 #big x
+        for y in range(big_y, big_y + 3):
+            for x in range(big_x, big_x + 3):
+                if num == self.board[y][x]:
+                    valid = False
+        return valid
+
     def __getSlotTypes(self, board):
         out = [[False for i in range(TILES)] for j in range(TILES)]
         for i in range(TILES):
@@ -64,7 +88,6 @@ class Game:
         self.solved = copy.deepcopy(self.board)
         solver.solve(self.solved)
 
-        pprint(self.solved)
         self.slotTypes = self.__getSlotTypes(self.board)
         self.rows = len(self.board[0])
         self.cols = len(self.board)
@@ -75,11 +98,17 @@ class Game:
         self.selNum = -1
         self.win = False
         self.selLock = False
+        self.w, self.h = pygame.display.get_surface().get_size()
 
     def updateBoard(self, num):
         if self.slotTypes[self.selection[1]][self.selection[0]] != 1:
-            self.selNum = num
-            self.board[self.selection[1]][self.selection[0]] = num
+            if self.__validateEntry(num) or num == 0:
+                self.selNum = num
+                self.board[self.selection[1]][self.selection[0]] = num
+            else:
+                self.wrongCount += 1
+                print(self.wrongCount)
+            
 
     def isSelected(self):
         if self.selection[0] != -1:
@@ -95,6 +124,7 @@ class Game:
 
         if click:
             self.selection[0], self.selection[1] = self.hover
+            print(self.selection)
 
 
     def render(self, screen):
@@ -124,8 +154,18 @@ class Game:
                 if self.slotTypes[i][j]:
                     alpha = 128
                 numSprite = textures["numSprites"].getSprite(num, 0)
+                if num == 0:
+                    numSprite.fill((255,0,255))
                 numSprite.set_alpha(alpha)
                 screen.blit(numSprite, (j*TILE_SIZE, i*TILE_SIZE))
+        
+        #wrong count and timer
+        xmark = textures["xmark"].getSprite(0,0)
+        screen.blit(xmark, (0, self.h - 30))
+        wrongString = str(self.wrongCount)
+        for i in range(len(wrongString)):
+            numSprite = textures["numSprites"].getSprite(int(wrongString[i]), 0)
+            screen.blit(numSprite, ((i+1) * TILE_SIZE, 9*TILE_SIZE))
 
         # tile hover 
         hover = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -166,13 +206,22 @@ def main():
     #textures
     textures["squareImage"] = SpriteSheet(os.path.join(TEXTURE_PATH, "square.png"))
     textures["numSprites"] = SpriteSheet(os.path.join(TEXTURE_PATH, "numbers_keyed.png"))
+    textures["xmark"] = SpriteSheet(os.path.join(TEXTURE_PATH, "xmark.png"))
+    textures["time"] = SpriteSheet(os.path.join(TEXTURE_PATH, "time.png"))
+
+    #print loading texture
+    load = pygame.Surface((120, 60))
+    load.set_colorkey((255,0,255))
+    load.blit(pygame.image.load(os.path.join(TEXTURE_PATH, "loading.png")), (0,0))
+    
+    screen.blit(load, (0, TILE_SIZE*8))
+    pygame.display.flip()
 
     keyIn = {pygame.K_0: 0,pygame.K_1: 1,pygame.K_2: 2,pygame.K_3: 3,pygame.K_4: 4,pygame.K_5: 5,pygame.K_6: 6,pygame.K_7: 7,
     pygame.K_8: 8,pygame.K_9: 9}
     
     #game init
     game = Game()
-    
     running = True
 
     while running:
@@ -184,12 +233,11 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                click = True
+                click = event.button == 1
             elif event.type == pygame.KEYDOWN:
                 try:
                     if game.isSelected():
                         game.updateBoard(keyIn[event.key])
-                        pprint(game.board)
                 except:
                     pass
                 if event.key == pygame.K_ESCAPE:
