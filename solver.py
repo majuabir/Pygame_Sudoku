@@ -1,5 +1,6 @@
 import os
 import pprint
+import random
 
 board = [
     [0,8,5,3,0,0,0,0,0],
@@ -12,6 +13,19 @@ board = [
     [0,0,3,5,0,0,0,0,9],
     [0,0,1,0,0,0,7,0,0]
 ]
+
+# board = [
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,0,0,0,0]
+# ]
+
 
 # ans = [
 #     [6,8,5,3,2,1,4,9,7],
@@ -60,7 +74,7 @@ def solve(b):
                         if k == b[y][x]:
                             valid = False
                 
-                #if valid, move on, otherwise return false
+                #if valid, recurse, otherwise try next number
                 if valid:
                     b[i][j] = k
                     if solve(b):
