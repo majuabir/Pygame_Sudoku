@@ -1,6 +1,7 @@
 import os
 import pprint
 import random
+import pygame
 
 board = [
     [0,8,5,3,0,0,0,0,0],
