@@ -2,6 +2,8 @@ import os
 import pygame
 import time
 from pprint import pprint
+
+from pygame.constants import WINDOWHITTEST
 import solver
 import copy
 from math import floor
@@ -9,13 +11,17 @@ from math import floor
 TILE_SIZE = 30
 TILES = 9
 PINK_COLORKEY = (255,0,255)
+WINDOW_WIDTH = TILE_SIZE * 9
+WINDOW_HEIGHT = TILE_SIZE * 10
 """
 LOADED TEXTURES (as seen in main):
-    textures["squareImage"] = SpriteSheet(os.path.join(TEXTURE_PATH, "square.png"))
     textures["numSprites"] = SpriteSheet(os.path.join(TEXTURE_PATH, "numbers_keyed.png"))
-    textures["loading"] = SpriteSheet(os.path.join(TEXTURE_PATH, "loading.png"))
     textures["xmark"] = SpriteSheet(os.path.join(TEXTURE_PATH, "xmark.png"))
     textures["clock"] = SpriteSheet(os.path.join(TEXTURE_PATH, "clock.png"))
+    textures["colon"] = SpriteSheet(os.path.join(TEXTURE_PATH, "colon.png"))
+
+    textures["win"] = pygame.image.load(os.path.join(TEXTURE_PATH, "win.png"))
+    
 """
 textures = {}
 
@@ -59,8 +65,19 @@ class Game:
                 [0,0,3,5,0,0,0,0,9],
                 [0,0,1,0,0,0,7,0,0]
             ]
+            # self.board = [
+            #     [6,8,5,3,2,1,4,9,7],
+            #     [7,3,4,9,8,5,1,2,6],
+            #     [2,1,9,6,4,7,5,8,3],
+            #     [3,4,2,1,5,9,6,7,8],
+            #     [5,6,8,2,7,4,9,3,1],
+            #     [1,9,7,8,3,6,2,4,5],
+            #     [9,2,6,7,1,8,3,5,4],
+            #     [4,7,3,5,6,2,8,1,9],
+            #     [8,5,1,4,9,3,7,6,0]
+            # ]
             self.solved = copy.deepcopy(self.board)
-            solver.solve(self.solved)        
+            solver.solve(self.solved)
         self.boardInit = copy.deepcopy(self.board)
 
         self.slotTypes = self.__getSlotTypes(self.board)
@@ -114,6 +131,10 @@ class Game:
                 pass
         return out
 
+    def checkDone(self):
+        if self.board == self.solved:
+            self.win = True
+    
     def updateBoard(self, num):
         if self.slotTypes[self.selection[1]][self.selection[0]] != 1:
             if self.__validateEntry(num) or num == 0:
@@ -198,23 +219,30 @@ class Game:
             if i == len(clockString) - 2:
                 screen.blit(textures["colon"].getSprite(0,0), ((i+5) * TILE_SIZE - TILE_SIZE // 2, 9*TILE_SIZE))
 
+        if not self.win:
+            # tile hover 
+            hover = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            hover.set_alpha(128)
+            sqColor = self.slotTypes[self.hover[1]][self.hover[0]]
+            if sqColor == 1:
+                hover.fill((255,0,0))
+            elif sqColor == 0:
+                hover.fill((0,0,255))
+            screen.blit(hover, (self.hover[0]*TILE_SIZE, self.hover[1]*TILE_SIZE))
 
-        # tile hover 
-        hover = pygame.Surface((TILE_SIZE, TILE_SIZE))
-        hover.set_alpha(128)
-        sqColor = self.slotTypes[self.hover[1]][self.hover[0]]
-        if sqColor == 1:
-            hover.fill((255,0,0))
-        elif sqColor == 0:
-            hover.fill((0,0,255))
-        screen.blit(hover, (self.hover[0]*TILE_SIZE, self.hover[1]*TILE_SIZE))
-
-        # tile select
-        if self.selection[0] != -1:
-            select = pygame.Surface((TILE_SIZE, TILE_SIZE))
-            select.set_alpha(128)
-            select.fill((0,255,0))
-            screen.blit(select, (self.selection[0]*TILE_SIZE, self.selection[1]*TILE_SIZE))
+            # tile select
+            if self.selection[0] != -1:
+                select = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                select.set_alpha(128)
+                select.fill((0,255,0))
+                screen.blit(select, (self.selection[0]*TILE_SIZE, self.selection[1]*TILE_SIZE))
+        else:
+            dim = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+            dim.set_alpha(128)
+            dim.fill((0,0,0))
+            screen.blit(dim, (0,0))
+            screen.blit(textures["win"], (TILE_SIZE*2 + 15, TILE_SIZE*3 + 15))
+            
         
         pygame.display.flip()
 
@@ -240,6 +268,7 @@ def main():
     textures["xmark"] = SpriteSheet(os.path.join(TEXTURE_PATH, "xmark.png"))
     textures["clock"] = SpriteSheet(os.path.join(TEXTURE_PATH, "clock.png"))
     textures["colon"] = SpriteSheet(os.path.join(TEXTURE_PATH, "colon.png"))
+    textures["win"] = pygame.image.load(os.path.join(TEXTURE_PATH, "win.png"))
 
     #loading texture
     load = pygame.Surface((120, 60))
@@ -280,6 +309,7 @@ def main():
         ####### RECURRING LOGIC ##########
         #check hover over square
         game.highlight(pygame.mouse.get_pos(), click)
+        game.checkDone()
         if not game.win:
             game.updateTimer()
 
