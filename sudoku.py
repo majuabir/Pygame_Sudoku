@@ -13,6 +13,7 @@ TILES = 9
 PINK_COLORKEY = (255,0,255)
 WINDOW_WIDTH = TILE_SIZE * 9
 WINDOW_HEIGHT = TILE_SIZE * 10
+DEBUG = True
 """
 LOADED TEXTURES (as seen in main):
     textures["numSprites"] = SpriteSheet(os.path.join(TEXTURE_PATH, "numbers_keyed.png"))
@@ -241,9 +242,11 @@ class Game:
             dim.set_alpha(128)
             dim.fill((0,0,0))
             screen.blit(dim, (0,0))
-            screen.blit(textures["win"], (TILE_SIZE*2 + 15, TILE_SIZE*3 + 15))
+            screen.blit(textures["win"], (TILE_SIZE*2 + floor(TILE_SIZE/2), TILE_SIZE*3 + floor(TILE_SIZE/2)))
             
-        
+        if DEBUG:
+            pass
+
         pygame.display.flip()
 
 
@@ -260,7 +263,7 @@ def main():
     #window
     pygame.display.set_caption("Sudoku")
     pygame.display.set_icon(pygame.image.load(os.path.join(TEXTURE_PATH, "square.png")))
-    screen = pygame.display.set_mode((TILE_SIZE * 9, TILE_SIZE * 10))
+    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     screen.set_colorkey( PINK_COLORKEY )
 
     #textures
